@@ -215,19 +215,85 @@ Focus on what would get HIGH CLICK-THROUGH RATES based on proven YouTube thumbna
 
 Return ONLY valid JSON, no markdown or explanation.`;
 
-  const result = await textCompletion(
-    [{ role: "user", content: analysisPrompt }],
-    { temperature: 0.8, maxTokens: 2048 }
-  );
+  const responseFormat = {
+  type: "json_schema",
+  json_schema: {
+    name: "video_analysis",
+    strict: true,
+    schema: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        topic: { type: "string" },
+        hook: { type: "string" },
+        mood: { type: "string" },
+        keyMoments: {
+          type: "array",
+          items: { type: "string" },
+        },
+        visualElements: {
+          type: "array",
+          items: { type: "string" },
+        },
+        textSuggestions: {
+          type: "array",
+          items: { type: "string" },
+        },
+        colorPalette: {
+          type: "array",
+          items: { type: "string" },
+        },
+        targetEmotion: { type: "string" },
+        thumbnailConcepts: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              description: { type: "string" },
+              textOverlay: { type: "string" },
+              mood: { type: "string" },
+              visualStyle: { type: "string" },
+              faceExpression: { type: "string" },
+            },
+            required: [
+              "description",
+              "textOverlay",
+              "mood",
+              "visualStyle",
+              "faceExpression",
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: [
+        "title",
+        "topic",
+        "hook",
+        "mood",
+        "keyMoments",
+        "visualElements",
+        "textSuggestions",
+        "colorPalette",
+        "targetEmotion",
+        "thumbnailConcepts",
+      ],
+      additionalProperties: false,
+    },
+  },
+};
 
-  try {
-    // Try to parse JSON, handling potential markdown code blocks
-    const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    return JSON.parse(cleaned) as VideoAnalysis;
-  } catch {
-    throw new Error("Failed to parse video analysis. Please try again.");
+const result = await textCompletion(
+  [{ role: "user", content: analysisPrompt }],
+  {
+    model: MODELS.ANALYSIS,
+    temperature: 0.8,
+    maxTokens: 4096,
+    responseFormat,
   }
-}
+);
+
+return JSON.parse(result) as VideoAnalysis;
 
 /**
  * Analyze a text description instead of a video URL
@@ -265,9 +331,16 @@ Generate exactly 4 distinctly different thumbnail concepts.
 Return ONLY valid JSON, no markdown.`;
 
   const result = await textCompletion(
-    [{ role: "user", content: analysisPrompt }],
-    { temperature: 0.8, maxTokens: 2048 }
-  );
+  [{ role: "user", content: analysisPrompt }],
+  {
+    model: MODELS.ANALYSIS,
+    temperature: 0.8,
+    maxTokens: 4096,
+    responseFormat,
+  }
+);
+
+return JSON.parse(result) as VideoAnalysis;
 
   try {
     const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
