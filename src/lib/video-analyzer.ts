@@ -340,7 +340,7 @@ Return ONLY valid JSON, no markdown.`;
   }
 );
 
-return JSON.parse(result) as VideoAnalysis;
+return JSON.parse(result) as VideoAnalysis;}
 
   try {
     const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
