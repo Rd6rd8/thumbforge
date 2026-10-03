@@ -8,10 +8,10 @@ const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 // Models
 export const MODELS = {
   // Text analysis
-  ANALYSIS: "qwen/qwen3.8-27b:free",
+  ANALYSIS: "z-ai/glm-5.3-flash",
   // Image generation
   IMAGE_FLASH: "bytedance-seed/seedream-5-0-flash",
-  IMAGE_PRO: "google/gemini-3-pro-image-preview",
+  IMAGE_PRO: "bytedance-seed/seedream-5-0-pro",
   IMAGE_FLUX: "inclusionai/ming-image-0.1-design-layer",
 } as const;
 
