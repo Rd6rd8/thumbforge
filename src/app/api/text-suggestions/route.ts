@@ -33,7 +33,8 @@ Return ONLY the JSON array, no explanation.`;
 
     const result = await textCompletion(
       [{ role: "user", content: prompt }],
-      { temperature: 0.9, maxTokens: 256 }
+      // Headroom for reasoning tokens (counted against max_tokens)
+      { temperature: 0.9, maxTokens: 4096 }
     );
 
     const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();

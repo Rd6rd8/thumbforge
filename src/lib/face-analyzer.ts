@@ -91,7 +91,8 @@ Return ONLY valid JSON, no markdown fences.`,
     {
       model: MODELS.ANALYSIS,
       temperature: 0.3,
-      maxTokens: 1024,
+      // Headroom for reasoning tokens (counted against max_tokens)
+      maxTokens: 4096,
     }
   );
 

@@ -230,6 +230,21 @@ export async function getVideoMetadata(
 }
 
 /**
+ * Parse model output into a VideoAnalysis object.
+ * Structured outputs are a routing preference, not a guarantee: when the
+ * request is served by an endpoint without response_format support, the model
+ * may wrap the JSON in markdown fences — strip them before parsing (same
+ * pattern as face-analyzer and the text-suggestions route).
+ */
+function parseAnalysis(raw: string): VideoAnalysis {
+  const cleaned = raw
+    .replace(/```json\s*/g, "")
+    .replace(/```\s*/g, "")
+    .trim();
+  return JSON.parse(cleaned) as VideoAnalysis;
+}
+
+/**
  * Analyze video content and generate thumbnail concepts
  */
 export async function analyzeVideo(
@@ -290,12 +305,14 @@ Return ONLY valid JSON, no markdown or explanation.`;
     {
       model: MODELS.ANALYSIS,
       temperature: 0.8,
-      maxTokens: 4096,
+      // Headroom for reasoning tokens: reasoning models count reasoning
+      // against max_tokens, and a tight budget yields empty/truncated JSON.
+      maxTokens: 16384,
       responseFormat,
     }
   );
 
-  return JSON.parse(result) as VideoAnalysis;
+  return parseAnalysis(result);
 }
 
 /**
@@ -338,10 +355,12 @@ Return ONLY valid JSON, no markdown.`;
     {
       model: MODELS.ANALYSIS,
       temperature: 0.8,
-      maxTokens: 4096,
+      // Headroom for reasoning tokens: reasoning models count reasoning
+      // against max_tokens, and a tight budget yields empty/truncated JSON.
+      maxTokens: 16384,
       responseFormat,
     }
   );
 
-  return JSON.parse(result) as VideoAnalysis;
+  return parseAnalysis(result);
 }

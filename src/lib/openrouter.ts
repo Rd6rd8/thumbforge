@@ -9,7 +9,7 @@ import { put } from "@vercel/blob";
 // Models
 export const MODELS = {
   // Text analysis
-  ANALYSIS: "z-ai/glm-5.3-flash",
+  ANALYSIS: "openai/gpt-6-luna-pro",
   // Image generation
   IMAGE_FLASH: "bytedance-seed/seedream-5-0-flash",
   IMAGE_PRO: "bytedance-seed/seedream-5-0-pro",
@@ -68,12 +68,21 @@ export async function textCompletion(
   messages,
   temperature: options.temperature ?? 0.7,
   max_tokens: options.maxTokens ?? 4096,
+  // Keep reasoning low: GPT-6 Luna Pro defaults to medium effort ("pro" mode
+  // spends far more), which is wasteful for these small JSON tasks. Models
+  // without reasoning support simply ignore this parameter (require_parameters
+  // stays unset, so it never blocks routing).
+  reasoning_effort: "low",
 
+  // Structured outputs (response_format) is a *soft* routing preference per
+  // the OpenRouter provider-routing docs: endpoints that support it are
+  // preferred, but the request is never rejected when none of the model's
+  // eligible endpoints do. Do NOT add provider.require_parameters: true here:
+  // it turns parameter support into a hard filter, which fails routing with
+  // 404 "No endpoints found that can handle the requested parameters" when
+  // tier/regional filters leave only endpoints lacking a requested parameter.
   ...(options.responseFormat && {
     response_format: options.responseFormat,
-    provider: {
-      require_parameters: true,
-    },
   }),
 }),
   });
