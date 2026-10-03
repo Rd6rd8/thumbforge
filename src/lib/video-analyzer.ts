@@ -6,7 +6,7 @@
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { YoutubeTranscript } from "youtube-transcript-plus";
-import { textCompletion } from "./openrouter";
+import { textCompletion, MODELS } from "./openrouter";
 
 const execFileAsync = promisify(execFile);
 
@@ -32,6 +32,74 @@ export interface ThumbnailConcept {
   visualStyle: string;
   faceExpression: string;
 }
+
+const responseFormat = {
+  type: "json_schema",
+  json_schema: {
+    name: "video_analysis",
+    strict: true,
+    schema: {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        topic: { type: "string" },
+        hook: { type: "string" },
+        mood: { type: "string" },
+        keyMoments: {
+          type: "array",
+          items: { type: "string" },
+        },
+        visualElements: {
+          type: "array",
+          items: { type: "string" },
+        },
+        textSuggestions: {
+          type: "array",
+          items: { type: "string" },
+        },
+        colorPalette: {
+          type: "array",
+          items: { type: "string" },
+        },
+        targetEmotion: { type: "string" },
+        thumbnailConcepts: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              description: { type: "string" },
+              textOverlay: { type: "string" },
+              mood: { type: "string" },
+              visualStyle: { type: "string" },
+              faceExpression: { type: "string" },
+            },
+            required: [
+              "description",
+              "textOverlay",
+              "mood",
+              "visualStyle",
+              "faceExpression",
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: [
+        "title",
+        "topic",
+        "hook",
+        "mood",
+        "keyMoments",
+        "visualElements",
+        "textSuggestions",
+        "colorPalette",
+        "targetEmotion",
+        "thumbnailConcepts",
+      ],
+      additionalProperties: false,
+    },
+  },
+};
 
 /**
  * Extract transcript from YouTube video
@@ -143,7 +211,9 @@ export function extractVideoId(url: string): string | null {
 /**
  * Get video metadata (title, description) from YouTube oEmbed
  */
-export async function getVideoMetadata(youtubeUrl: string): Promise<{ title: string; author: string }> {
+export async function getVideoMetadata(
+  youtubeUrl: string
+): Promise<{ title: string; author: string }> {
   try {
     const response = await fetch(
       `https://www.youtube.com/oembed?url=${encodeURIComponent(youtubeUrl)}&format=json`,
@@ -215,85 +285,18 @@ Focus on what would get HIGH CLICK-THROUGH RATES based on proven YouTube thumbna
 
 Return ONLY valid JSON, no markdown or explanation.`;
 
-  const responseFormat = {
-  type: "json_schema",
-  json_schema: {
-    name: "video_analysis",
-    strict: true,
-    schema: {
-      type: "object",
-      properties: {
-        title: { type: "string" },
-        topic: { type: "string" },
-        hook: { type: "string" },
-        mood: { type: "string" },
-        keyMoments: {
-          type: "array",
-          items: { type: "string" },
-        },
-        visualElements: {
-          type: "array",
-          items: { type: "string" },
-        },
-        textSuggestions: {
-          type: "array",
-          items: { type: "string" },
-        },
-        colorPalette: {
-          type: "array",
-          items: { type: "string" },
-        },
-        targetEmotion: { type: "string" },
-        thumbnailConcepts: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              description: { type: "string" },
-              textOverlay: { type: "string" },
-              mood: { type: "string" },
-              visualStyle: { type: "string" },
-              faceExpression: { type: "string" },
-            },
-            required: [
-              "description",
-              "textOverlay",
-              "mood",
-              "visualStyle",
-              "faceExpression",
-            ],
-            additionalProperties: false,
-          },
-        },
-      },
-      required: [
-        "title",
-        "topic",
-        "hook",
-        "mood",
-        "keyMoments",
-        "visualElements",
-        "textSuggestions",
-        "colorPalette",
-        "targetEmotion",
-        "thumbnailConcepts",
-      ],
-      additionalProperties: false,
-    },
-  },
-};
+  const result = await textCompletion(
+    [{ role: "user", content: analysisPrompt }],
+    {
+      model: MODELS.ANALYSIS,
+      temperature: 0.8,
+      maxTokens: 4096,
+      responseFormat,
+    }
+  );
 
-const result = await textCompletion(
-  [{ role: "user", content: analysisPrompt }],
-  {
-    model: MODELS.ANALYSIS,
-    temperature: 0.8,
-    maxTokens: 4096,
-    responseFormat,
-  }
-);
-
-return JSON.parse(result) as VideoAnalysis;
+  return JSON.parse(result) as VideoAnalysis;
+}
 
 /**
  * Analyze a text description instead of a video URL
@@ -331,21 +334,14 @@ Generate exactly 4 distinctly different thumbnail concepts.
 Return ONLY valid JSON, no markdown.`;
 
   const result = await textCompletion(
-  [{ role: "user", content: analysisPrompt }],
-  {
-    model: MODELS.ANALYSIS,
-    temperature: 0.8,
-    maxTokens: 4096,
-    responseFormat,
-  }
-);
+    [{ role: "user", content: analysisPrompt }],
+    {
+      model: MODELS.ANALYSIS,
+      temperature: 0.8,
+      maxTokens: 4096,
+      responseFormat,
+    }
+  );
 
-return JSON.parse(result) as VideoAnalysis;}
-
-  try {
-    const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    return JSON.parse(cleaned) as VideoAnalysis;
-  } catch {
-    throw new Error("Failed to parse analysis. Please try again.");
-  }
+  return JSON.parse(result) as VideoAnalysis;
 }
