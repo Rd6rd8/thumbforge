@@ -104,7 +104,7 @@ export async function generateImage(
     n?: number;
   } = {}
 ): Promise<string[]> {
-  const response = await fetch(`${OPENROUTER_BASE_URL}/images`, {
+  const response = await fetch(`${OPENROUTER_API_URL}/images`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${OPENROUTER_API_KEY}`,
