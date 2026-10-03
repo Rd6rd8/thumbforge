@@ -5,6 +5,7 @@
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
+import { put } from "@vercel/blob";
 // Models
 export const MODELS = {
   // Text analysis
@@ -165,14 +166,27 @@ export async function generateImage(
 
   const image = result?.data?.[0];
 
-  if (!image?.b64_json) {
-    throw new Error(
-      "OpenRouter returned no valid generated image"
-    );
-  }
+if (!image?.b64_json) {
+  throw new Error(
+    "OpenRouter returned no valid generated image"
+  );
+}
 
-  return {
-    imageBase64: `data:${image.media_type || "image/png"};base64,${image.b64_json}`,
-    revisedPrompt: undefined,
-  };
+const mimeType = image.media_type || "image/png";
+const imageBuffer = Buffer.from(image.b64_json, "base64");
+
+const blob = await put(
+  `thumbnails/thumb-${Date.now()}.png`,
+  imageBuffer,
+  {
+    access: "public",
+    addRandomSuffix: true,
+    contentType: mimeType,
+  }
+);
+
+return {
+  imageBase64: blob.url,
+  revisedPrompt: undefined,
+};
 }
