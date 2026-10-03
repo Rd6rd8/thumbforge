@@ -8,11 +8,11 @@ const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 // Models
 export const MODELS = {
   // Text analysis
-  ANALYSIS: "anthropic/claude-3.5-sonnet",
+  ANALYSIS: "qwen/qwen3.8-27b:free",
   // Image generation
-  IMAGE_FLASH: "google/gemini-2.5-flash-image",
+  IMAGE_FLASH: "bytedance-seed/seedream-5-0-flash",
   IMAGE_PRO: "google/gemini-3-pro-image-preview",
-  IMAGE_FLUX: "black-forest-labs/flux-pro-1.1",
+  IMAGE_FLUX: "inclusionai/ming-image-0.1-design-layer",
 } as const;
 
 interface OpenRouterMessage {
