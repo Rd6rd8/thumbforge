@@ -96,39 +96,62 @@ export async function textCompletion(
 /**
  * Call OpenRouter for image generation (thumbnail creation)
  */
-/**
- * Call OpenRouter for image generation (thumbnail creation)
- */
 export async function generateImage(
   prompt: string,
   options: {
     model?: string;
     aspectRatio?: string;
     n?: number;
+    referenceImageBase64?: string;
   } = {}
-): Promise<string[]> {
+): Promise<{
+  imageBase64: string;
+  revisedPrompt?: string;
+}> {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
     throw new Error("OPENROUTER_API_KEY not set");
   }
 
-  const response = await fetch(`${OPENROUTER_API_URL.replace("/chat/completions", "")}/images`, {
+  const imagesUrl = OPENROUTER_API_URL.replace(
+    "/chat/completions",
+    "/images"
+  );
+
+  const body: Record<string, unknown> = {
+    model: options.model || MODELS.IMAGE_FLASH,
+    prompt,
+  };
+
+  if (options.aspectRatio) {
+    body.aspect_ratio = options.aspectRatio;
+  }
+
+  if (options.n) {
+    body.n = options.n;
+  }
+
+  if (options.referenceImageBase64) {
+    body.input_references = [
+      {
+        type: "image_url",
+        image_url: {
+          url: options.referenceImageBase64.startsWith("data:")
+            ? options.referenceImageBase64
+            : `data:image/png;base64,${options.referenceImageBase64}`,
+        },
+      },
+    ];
+  }
+
+  const response = await fetch(imagesUrl, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: options.model || MODELS.IMAGE_FLASH,
-      prompt,
-      ...(options.aspectRatio && {
-        aspect_ratio: options.aspectRatio,
-      }),
-      ...(options.n && {
-        n: options.n,
-      }),
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -140,27 +163,16 @@ export async function generateImage(
 
   const result = await response.json();
 
-  const images = result?.data ?? [];
+  const image = result?.data?.[0];
 
-  if (!Array.isArray(images) || images.length === 0) {
-    throw new Error("OpenRouter returned no generated images");
-  }
-
-  const generatedImages = images
-    .filter(
-      (image: any) =>
-        image &&
-        typeof image.b64_json === "string" &&
-        image.b64_json.length > 0
-    )
-    .map(
-      (image: any) =>
-        `data:${image.media_type || "image/png"};base64,${image.b64_json}`
+  if (!image?.b64_json) {
+    throw new Error(
+      "OpenRouter returned no valid generated image"
     );
-
-  if (generatedImages.length === 0) {
-    throw new Error("OpenRouter returned images without valid base64 data");
   }
 
-  return generatedImages;
+  return {
+    imageBase64: `data:${image.media_type || "image/png"};base64,${image.b64_json}`,
+    revisedPrompt: undefined,
+  };
 }
