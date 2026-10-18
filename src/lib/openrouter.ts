@@ -9,7 +9,7 @@ import { put } from "@vercel/blob";
 // Models
 export const MODELS = {
   // Text analysis
-  ANALYSIS: "openai/gpt-6-luna-pro",
+  ANALYSIS: "anthropic/claude-sonnet-5.5",
   // Image generation
   IMAGE_FLASH: "bytedance-seed/seedream-5-0-lite",
   IMAGE_PRO: "bytedance-seed/seedream-5-0-pro",
