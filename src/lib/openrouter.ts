@@ -11,7 +11,7 @@ export const MODELS = {
   // Text analysis
   ANALYSIS: "openai/gpt-6-luna-pro",
   // Image generation
-  IMAGE_FLASH: "bytedance-seed/seedream-5-0-flash",
+  IMAGE_FLASH: "bytedance-seed/seedream-5-0-lite",
   IMAGE_PRO: "bytedance-seed/seedream-5-0-pro",
   IMAGE_FLUX: "inclusionai/ming-image-0.1-design-layer",
 } as const;
